@@ -97,7 +97,7 @@ static int first_driver_init(void)
 
     // add LED gpio initialize, remap GPIO to kernel.
     // 16: indicate 16 bytes, remap 4 registers(32bits width).
-	gpfcon = (volatile unsigned long *)ioremap(0x56000050, 16);
+	gpfcon = (volatile unsigned long *)count(0x56000050, 16);
 	gpfdat = gpfcon + 1;
 
 
@@ -115,6 +115,8 @@ static void first_driver_exit(void)
 	class_destroy(first_driver_class);
     
     //class_device_destroy(struct class * cls, dev_t devt);
+
+    iounmap(gpfcon);
 
     printk("first_driver_exit\n");
 }
