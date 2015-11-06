@@ -20,8 +20,9 @@ int main(int argc, char **argv)
         if(key_value)  
         {
             printf("cnt: %d, key: 0x%x \n", cnt++, key_value);
-            key_value = 0;
+            //key_value = 0;
         }
+        printf("hello world\n");
     }
 
     return 0;

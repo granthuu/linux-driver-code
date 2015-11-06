@@ -14,6 +14,12 @@
 #include <linux/interrupt.h> 
 
 
+static DECLARE_WAIT_QUEUE_HEAD(button_waitq);
+
+/* 中断事件标志, 中断服务程序将它置1，third_drv_read将它清0 */
+static volatile int ev_press = 0;
+
+
 static int major;
 static struct class * third_driver_class;
 static struct class_device * third_driver_class_device;
@@ -64,7 +70,11 @@ static irqreturn_t buttons_irq(int irq, void *dev_id)
         // press key
         key_value = pin_desc_temp->key_val;
     }
-    
+
+    ev_press = 1;                           /* 表示中断发生了 */
+    wake_up_interruptible(&button_waitq);   /* 唤醒休眠的进程 */
+
+    //printk("buttons_irq \n");
     
     return IRQ_HANDLED;
 }
@@ -103,8 +113,16 @@ static ssize_t third_driver_read( struct file *file, char *buf, size_t count, lo
 	if (count < 1)
 		return -EINVAL;
 
-    temp = copy_to_user(buf, &key_value, sizeof(key_value));
-    key_value = 0x00;
+	/* 如果没有按键动作, 休眠 */
+	wait_event_interruptible(button_waitq, ev_press);
+    //printk("third_driver_read \n");
+
+	/* 如果有按键动作, 返回键值 */
+	temp = copy_to_user(buf, &key_value, 1);
+	ev_press = 0;
+
+//    temp = copy_to_user(buf, &key_value, sizeof(key_value));
+//    key_value = 0x00;
     
 
     return count;
@@ -152,7 +170,6 @@ static int third_driver_init(void)
 static void third_driver_exit(void)
 {
     unregister_chrdev(major, "third driver");
-
     class_destroy(third_driver_class);
     class_device_unregister(third_driver_class_device);
 
