@@ -137,7 +137,9 @@ static unsigned int forth_drv_poll(struct file *file, poll_table *wait)
 	poll_wait(file, &button_waitq, wait); // 不会立即休眠
 
 	if (ev_press)
-		mask |= POLLIN | POLLRDNORM;
+		mask |= POLLIN | POLLRDNORM;  // POLLIN 表示有数据可读。
+
+	printk("mask: %d\n", mask);
 
 	return mask;
 }
@@ -161,10 +163,10 @@ static struct file_operations third_fops = {
 static int forth_driver_init(void)
 {
     // 1. register char device
-    major = register_chrdev(0, "third driver", &third_fops);
+    major = register_chrdev(0, "forth driver", &third_fops);
 
     // 2. register class, and class device
-    third_driver_class = class_create(THIS_MODULE, "third driver class");
+    third_driver_class = class_create(THIS_MODULE, "forth driver class");
     third_driver_class_device = class_device_create(third_driver_class, NULL, MKDEV(major, 0), NULL, "key");
 
     // 3. remap GPIO to virtual address.
@@ -180,7 +182,7 @@ static int forth_driver_init(void)
 
 static void forth_driver_exit(void)
 {
-    unregister_chrdev(major, "third driver");
+    unregister_chrdev(major, "forth driver");
     class_destroy(third_driver_class);
     class_device_unregister(third_driver_class_device);
 
